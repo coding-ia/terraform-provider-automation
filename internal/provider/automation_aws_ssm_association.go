@@ -331,7 +331,7 @@ func (a *AWSSSMAssociationResource) Create(ctx context.Context, request resource
 	SetFrameworkFromString(&data.SyncCompliance, string(output.AssociationDescription.SyncCompliance), true)
 
 	// computed
-	arn := arn.ARN{
+	amazonResourceName := arn.ARN{
 		Partition: a.Meta.AWSClient.Partition,
 		Service:   "ssm",
 		Region:    a.Meta.AWSClient.Region,
@@ -339,7 +339,7 @@ func (a *AWSSSMAssociationResource) Create(ctx context.Context, request resource
 		Resource:  "association/" + aws.ToString(output.AssociationDescription.AssociationId),
 	}.String()
 
-	SetFrameworkFromString(&data.Arn, arn, false)
+	SetFrameworkFromString(&data.Arn, amazonResourceName, false)
 	SetFrameworkFromtStringPointer(&data.AssociationId, output.AssociationDescription.AssociationId)
 	SetFrameworkFromtStringPointer(&data.AssociationName, output.AssociationDescription.AssociationName)
 	SetFrameworkFromtStringPointer(&data.AssociationVersion, output.AssociationDescription.AssociationVersion)
@@ -399,7 +399,7 @@ func (a *AWSSSMAssociationResource) Read(ctx context.Context, request resource.R
 	SetFrameworkFromOutputLocationModel(&data.OutputLocation, association.OutputLocation)
 
 	// computed
-	arn := arn.ARN{
+	amazonResourceName := arn.ARN{
 		Partition: a.Meta.AWSClient.Partition,
 		Service:   "ssm",
 		Region:    a.Meta.AWSClient.Region,
@@ -408,7 +408,7 @@ func (a *AWSSSMAssociationResource) Read(ctx context.Context, request resource.R
 	}.String()
 
 	SetFrameworkFromBool(&data.ApplyOnlyAtCronInterval, association.ApplyOnlyAtCronInterval)
-	SetFrameworkFromString(&data.Arn, arn, false)
+	SetFrameworkFromString(&data.Arn, amazonResourceName, false)
 	SetFrameworkFromtStringPointer(&data.AssociationId, association.AssociationId)
 	SetFrameworkFromtStringPointer(&data.AssociationVersion, association.AssociationVersion)
 	SetFrameworkFromtStringPointer(&data.DocumentVersion, association.DocumentVersion)
@@ -509,7 +509,7 @@ func (a *AWSSSMAssociationResource) Update(ctx context.Context, request resource
 		return
 	}
 	if output != nil {
-		arn := arn.ARN{
+		amazonResourceName := arn.ARN{
 			Partition: a.Meta.AWSClient.Partition,
 			Service:   "ssm",
 			Region:    a.Meta.AWSClient.Region,
@@ -517,7 +517,7 @@ func (a *AWSSSMAssociationResource) Update(ctx context.Context, request resource
 			Resource:  "association/" + aws.ToString(output.AssociationDescription.AssociationId),
 		}.String()
 
-		SetFrameworkFromString(&plan.Arn, arn, false)
+		SetFrameworkFromString(&plan.Arn, amazonResourceName, false)
 		SetFrameworkFromtStringPointer(&plan.AssociationId, output.AssociationDescription.AssociationId)
 		SetFrameworkFromtStringPointer(&plan.AssociationVersion, output.AssociationDescription.AssociationVersion)
 		SetFrameworkFromtStringPointer(&plan.DocumentVersion, output.AssociationDescription.DocumentVersion)
