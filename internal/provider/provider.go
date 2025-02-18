@@ -24,7 +24,7 @@ func (ap *AutomationProvider) Metadata(ctx context.Context, request provider.Met
 
 func (ap *AutomationProvider) Schema(ctx context.Context, request provider.SchemaRequest, response *provider.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "The download Terraform provider allows you to download a file from an http website.",
+		MarkdownDescription: "The automation Terraform provider contains various resources used to assist in automation.",
 	}
 }
 

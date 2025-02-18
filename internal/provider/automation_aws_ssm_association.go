@@ -81,20 +81,25 @@ func (a *AWSSSMAssociationResource) Metadata(_ context.Context, request resource
 
 func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
+		MarkdownDescription: "Associates an SSM Document to an instance or EC2 tag.  This resource is intended to address the issues that exist in the official AWS provider.",
 		Attributes: map[string]schema.Attribute{
 			"apply_only_at_cron_interval": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				Description: "By default, when you create a new association, the system runs it immediately after it is created and then according to the schedule you specified and when target changes are detected.  Set this option if you want the association to run only according to the schedule you specified.  This parameter isn't supported for rate expressions.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"arn": schema.StringAttribute{
-				Computed: true,
+				Description: "The ARN of the SSM Association.",
+				Computed:    true,
 			},
 			"association_id": schema.StringAttribute{
-				Computed: true,
+				Description: "The ID of the association.",
+				Computed:    true,
 			},
 			"association_name": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "The name of the association.",
+				Optional:            true,
 				Validators: []validator.String{
 					stringvalidator.All(
 						stringvalidator.LengthBetween(3, 128),
@@ -103,16 +108,19 @@ func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaR
 				},
 			},
 			"association_version": schema.StringAttribute{
-				Computed: true,
+				Description: "The version of the association.",
+				Computed:    true,
 			},
 			"automation_target_parameter_name": schema.StringAttribute{
-				Optional: true,
+				Description: "The parameter that will define how your automation will branch out. This target is required for associations that use an Automation runbook and target resources by using rate controls.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 50),
 				},
 			},
 			"compliance_severity": schema.StringAttribute{
-				Optional: true,
+				Description: "The severity level to assign to the association.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOfCaseInsensitive(
 						[]string{
@@ -126,49 +134,57 @@ func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaR
 				},
 			},
 			"document_version": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The document version you want to associate with the targets.  Can be a specific version or the default version.",
+				Optional:    true,
+				Computed:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([$]LATEST|[$]DEFAULT|^[1-9][0-9]*$)$`), ""),
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed: true,
+				Description: "The ID of the association.",
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"max_concurrency": schema.StringAttribute{
-				Optional: true,
+				Description: "The maximum number of targets allowed to run the association at the same time.  You can specify a number, for example 10, or a percentage of the target set, for example 10%.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([1-9][0-9]*|[1-9][0-9]%|[1-9]%|100%)$`), "must be a valid number (e.g. 10) or percentage including the percent sign (e.g. 10%)"),
 				},
 			},
 			"max_errors": schema.StringAttribute{
-				Optional: true,
+				Description: "The number of errors that are allowed before the system stops sending requests to run the association on additional targets.  You can specify either an absolute number of errors, for example 10, or a percentage of the target set, for example 10%.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([1-9][0-9]*|[0]|[1-9][0-9]%|[0-9]%|100%)$`), "must be a valid number (e.g. 10) or percentage including the percent sign (e.g. 10%)"),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "The name of the SSM Command document or Automation runbook.",
+				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"parameters": schema.MapAttribute{
+				Description: "The parameters for the runtime configuration of the document.",
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.ListType{ElemType: types.StringType},
 			},
 			"schedule_expression": schema.StringAttribute{
-				Optional: true,
+				Description: "A cron expression when the association will be applied to the targets.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 256),
 				},
 			},
 			"sync_compliance": schema.StringAttribute{
-				Optional: true,
+				Description: "The mode for generating association compliance. You can specify AUTO or MANUAL. In AUTO mode, the system uses the status of the association execution to determine the compliance status.  In MANUAL mode, you must specify the AssociationId as a parameter.",
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOfCaseInsensitive(
 						[]string{
@@ -190,8 +206,9 @@ func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaR
 				},
 			},
 			"targets": schema.ListAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "The targets for the association.  You can target managed nodes by using tags, AWS resource groups, all managed nodes in an AWS account, or individual managed node IDs.",
+				Optional:    true,
+				Computed:    true,
 				ElementType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
 						"key":    types.StringType,
@@ -208,22 +225,26 @@ func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaR
 		},
 		Blocks: map[string]schema.Block{
 			"output_location": schema.ListNestedBlock{
+				Description: "An Amazon Simple Storage Service (Amazon S3) bucket where you want to store the output details of the request.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"s3_bucket_name": schema.StringAttribute{
-							Required: true,
+							Description: "The name of the S3 bucket.",
+							Required:    true,
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(3, 63),
 							},
 						},
 						"s3_key_prefix": schema.StringAttribute{
-							Optional: true,
+							Description: "The S3 bucket subfolder.",
+							Optional:    true,
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(0, 500),
 							},
 						},
 						"s3_region": schema.StringAttribute{
-							Optional: true,
+							Description: "The AWS Region of the S3 bucket.",
+							Optional:    true,
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(3, 20),
 							},
