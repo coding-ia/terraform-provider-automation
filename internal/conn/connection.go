@@ -17,11 +17,21 @@ type AWSClient struct {
 	Partition string
 }
 
-func CreateAWSClient(ctx context.Context) *AWSClient {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(""))
+type AWSConfigOptions struct {
+	Profile string
+	Region  string
+}
+
+func CreateAWSClient(ctx context.Context, options *AWSConfigOptions) *AWSClient {
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(options.Profile))
 	if err != nil {
 		panic(err)
 	}
+
+	if options.Region != "" {
+		cfg.Region = options.Region
+	}
+
 	ssmClient := ssm.NewFromConfig(cfg)
 
 	accountId, partition, _ := getAccountIDAndPartition(ctx, cfg)
