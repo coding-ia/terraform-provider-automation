@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"github.com/coding-ia/terraform-provider-automation/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"log"
@@ -20,6 +21,7 @@ import (
 
 var (
 	version string = "dev"
+	commit  string = "none"
 )
 
 func main() {
@@ -33,7 +35,8 @@ func main() {
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.New(version), opts)
+	release := fmt.Sprintf("%s-%s", version, commit)
+	err := providerserver.Serve(context.Background(), provider.New(release), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())
