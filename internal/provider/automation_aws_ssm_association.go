@@ -43,7 +43,6 @@ type AWSSSMAssociationResourceModel struct {
 	AutomationTargetParameterName types.String          `tfsdk:"automation_target_parameter_name"`
 	ComplianceSeverity            types.String          `tfsdk:"compliance_severity"`
 	DocumentVersion               types.String          `tfsdk:"document_version"`
-	ID                            types.String          `tfsdk:"id"`
 	MaxConcurrency                types.String          `tfsdk:"max_concurrency"`
 	MaxErrors                     types.String          `tfsdk:"max_errors"`
 	Name                          types.String          `tfsdk:"name"`
@@ -96,6 +95,9 @@ func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaR
 			"association_id": schema.StringAttribute{
 				Description: "The ID of the association.",
 				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"association_name": schema.StringAttribute{
 				MarkdownDescription: "The name of the association.",
@@ -139,13 +141,6 @@ func (a *AWSSSMAssociationResource) Schema(_ context.Context, _ resource.SchemaR
 				Computed:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([$]LATEST|[$]DEFAULT|^[1-9][0-9]*$)$`), ""),
-				},
-			},
-			"id": schema.StringAttribute{
-				Description: "The ID of the association.",
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"max_concurrency": schema.StringAttribute{
@@ -365,7 +360,6 @@ func (a *AWSSSMAssociationResource) Create(ctx context.Context, request resource
 	SetFrameworkFromtStringPointer(&data.AssociationName, output.AssociationDescription.AssociationName)
 	SetFrameworkFromtStringPointer(&data.AssociationVersion, output.AssociationDescription.AssociationVersion)
 	SetFrameworkFromtStringPointer(&data.DocumentVersion, output.AssociationDescription.DocumentVersion)
-	SetFrameworkFromtStringPointer(&data.ID, output.AssociationDescription.AssociationId)
 	SetFrameworkTags(&data.TagsAll, input.Tags, true)
 	data.Targets = targetsOut(ctx, output.AssociationDescription.Targets)
 
@@ -395,12 +389,12 @@ func (a *AWSSSMAssociationResource) Read(ctx context.Context, request resource.R
 		return
 	}
 
-	association, err := FindAssociationByID(ctx, a.Meta.AWSClient.SSMClient, data.ID.ValueString())
+	association, err := FindAssociationByID(ctx, a.Meta.AWSClient.SSMClient, data.AssociationId.ValueString())
 	if err != nil {
 		response.Diagnostics.AddError("Error reading association", err.Error())
 		return
 	}
-	tags, err := findAssociationTagsByID(ctx, a.Meta.AWSClient.SSMClient, data.ID.ValueString())
+	tags, err := findAssociationTagsByID(ctx, a.Meta.AWSClient.SSMClient, data.AssociationId.ValueString())
 	if err != nil {
 		response.Diagnostics.AddError("Error reading association tags", err.Error())
 	}
@@ -571,7 +565,7 @@ func (a *AWSSSMAssociationResource) Delete(ctx context.Context, request resource
 }
 
 func (a *AWSSSMAssociationResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), request, response)
+	resource.ImportStatePassthroughID(ctx, path.Root("association_id"), request, response)
 }
 
 func FindAssociationByID(ctx context.Context, conn *ssm.Client, id string) (*awstypes.AssociationDescription, error) {

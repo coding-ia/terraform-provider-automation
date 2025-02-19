@@ -44,9 +44,11 @@ func TestAccSSMAssociation_basic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 		},
 	})
@@ -76,9 +78,11 @@ func TestAccSSMAssociation_applyOnlyAtCronInterval(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicApplyOnlyAtCronInterval(rName, false),
@@ -137,9 +141,11 @@ targets {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicTargets(rName, twoTargets),
@@ -189,9 +195,11 @@ func TestAccSSMAssociation_withParameters(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicParametersUpdated(rName),
@@ -230,9 +238,11 @@ func TestAccSSMAssociation_withAssociationName(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicName(rName, assocName2),
@@ -273,9 +283,11 @@ func TestAccSSMAssociation_withAssociationNameAndScheduleExpression(t *testing.T
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_nameAndScheduleExpression(rName, assocName, scheduleExpression2),
@@ -313,9 +325,11 @@ func TestAccSSMAssociation_withDocumentVersion(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 		},
 	})
@@ -346,9 +360,11 @@ func TestAccSSMAssociation_withOutputLocation(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicOutPutLocationUpdateBucketName(rName),
@@ -396,9 +412,11 @@ func TestAccSSMAssociation_withOutputLocation_s3Region(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_outputLocationUpdateS3Region(rName),
@@ -410,9 +428,11 @@ func TestAccSSMAssociation_withOutputLocation_s3Region(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_outputLocationNoS3Region(rName),
@@ -456,6 +476,8 @@ func TestAccSSMAssociation_withOutputLocation_waitForSuccessTimeout(t *testing.T
 				ImportStateVerifyIgnore: []string{
 					"wait_for_success_timeout_seconds",
 				},
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 		},
 	})
@@ -485,10 +507,12 @@ func TestAccSSMAssociation_withAutomationTargetParamName(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parameters"},
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateVerifyIgnore:              []string{"parameters"},
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicParametersUpdated(rName),
@@ -525,9 +549,11 @@ func TestAccSSMAssociation_withScheduleExpression(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicScheduleExpressionUpdated(rName),
@@ -568,9 +594,11 @@ func TestAccSSMAssociation_withComplianceSeverity(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_basicComplianceSeverity(compSeverity2, rName, assocName),
@@ -609,9 +637,11 @@ func TestAccSSMAssociation_rateControl(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateIdFunc:                    testAccSSMAssociationImportStateIdFunc(resourceName),
+				ImportStateVerifyIdentifierAttribute: "association_id",
 			},
 			{
 				Config: testAccAssociationConfig_rateControl(rName, "20%"),
@@ -1632,7 +1662,9 @@ func testAccCheckAssociationExists(ctx context.Context, n string) resource.TestC
 		}
 
 		conn := getProviderMeta(ctx).AWSClient.SSMClient
-		_, err := FindAssociationByID(ctx, conn, rs.Primary.ID)
+
+		associationId := rs.Primary.Attributes["association_id"]
+		_, err := FindAssociationByID(ctx, conn, associationId)
 
 		return err
 	}
@@ -1696,6 +1728,17 @@ data "aws_ami" "amzn2-ami-minimal-hvm-ebs-%[1]s" {
   }
 }
 `, architecture)
+}
+
+func testAccSSMAssociationImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
+	return func(s *terraform.State) (string, error) {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return "", fmt.Errorf("Not found: %s", resourceName)
+		}
+
+		return rs.Primary.Attributes["association_id"], nil
+	}
 }
 
 func getProviderMeta(ctx context.Context) Meta {
