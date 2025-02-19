@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	provider2 "github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/coding-ia/terraform-provider-automation/internal/conn"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -1702,10 +1702,9 @@ func getProviderMeta(ctx context.Context) Meta {
 	provider := New("")()
 	p := provider.(*AutomationProvider)
 
-	request := provider2.ConfigureRequest{}
-	response := &provider2.ConfigureResponse{}
-
-	p.Configure(ctx, request, response)
+	opts := &conn.AWSConfigOptions{}
+	client := conn.CreateAWSClient(ctx, opts)
+	p.Meta.AWSClient = *client
 
 	return p.Meta
 }
