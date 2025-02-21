@@ -2,12 +2,15 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/YakDriver/regexache"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	awstypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -16,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"slices"
 	"time"
 )
 
@@ -27,12 +31,13 @@ type AWSSSMCommandResource struct {
 }
 
 type AWSSSMCommandResourceModel struct {
-	CreateCommand  CreateCommandModel    `tfsdk:"create_command"`
-	DeleteCommand  DeleteCommandModel    `tfsdk:"delete_command"`
-	InstanceIds    types.List            `tfsdk:"instance_ids"`
-	MaxConcurrency types.String          `tfsdk:"max_concurrency"`
-	MaxErrors      types.String          `tfsdk:"max_errors"`
-	OutputLocation []OutputLocationModel `tfsdk:"output_location"`
+	CreateCommand                CreateCommandModel    `tfsdk:"create_command"`
+	DeleteCommand                []DeleteCommandModel  `tfsdk:"delete_command"`
+	InstanceIds                  types.List            `tfsdk:"instance_ids"`
+	MaxConcurrency               types.String          `tfsdk:"max_concurrency"`
+	MaxErrors                    types.String          `tfsdk:"max_errors"`
+	OutputLocation               []OutputLocationModel `tfsdk:"output_location"`
+	WaitForSuccessTimeoutSeconds types.Int32           `tfsdk:"wait_for_success_timeout_seconds"`
 }
 
 type CreateCommandModel struct {
@@ -54,7 +59,7 @@ func newAWSSSMCommandResource() resource.Resource {
 	return &AWSSSMCommandResource{}
 }
 
-func (c *AWSSSMCommandResource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
+func (c *AWSSSMCommandResource) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -62,11 +67,11 @@ func (c *AWSSSMCommandResource) Configure(ctx context.Context, request resource.
 	c.Meta = request.ProviderData.(Meta)
 }
 
-func (c *AWSSSMCommandResource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+func (c *AWSSSMCommandResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_aws_ssm_command"
 }
 
-func (c *AWSSSMCommandResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *AWSSSMCommandResource) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: "Sends SSM Command instance.",
 		Attributes: map[string]schema.Attribute{
@@ -90,6 +95,9 @@ func (c *AWSSSMCommandResource) Schema(ctx context.Context, request resource.Sch
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([1-9][0-9]*|[0]|[1-9][0-9]%|[0-9]%|100%)$`), "must be a valid number (e.g. 10) or percentage including the percent sign (e.g. 10%)"),
 				},
+			},
+			"wait_for_success_timeout_seconds": schema.Int32Attribute{
+				Optional: true,
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -255,6 +263,14 @@ func (c *AWSSSMCommandResource) Create(ctx context.Context, request resource.Cre
 		data.CreateCommand.Parameters = parametersOut(output.Command.Parameters)
 	}
 
+	if !data.WaitForSuccessTimeoutSeconds.IsNull() {
+		timeout := time.Duration(data.WaitForSuccessTimeoutSeconds.ValueInt32()) * time.Second
+		if _, err = waitCommandComplete(ctx, ssmClient, output.Command.CommandId, timeout, response.Diagnostics); err != nil {
+			response.Diagnostics.AddError("Error running SSM command", fmt.Sprintf("waiting for SSM command (%s) complete: %s", aws.ToString(output.Command.CommandId), err.Error()))
+			return
+		}
+	}
+
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
@@ -292,7 +308,29 @@ func (c *AWSSSMCommandResource) Delete(ctx context.Context, request resource.Del
 		return
 	}
 
+	if data.DeleteCommand != nil {
+
+	}
+
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
+}
+
+func FindCommandByID(ctx context.Context, conn *ssm.Client, id *string) (*awstypes.Command, error) {
+	input := &ssm.ListCommandsInput{
+		CommandId: id,
+	}
+
+	output, err := conn.ListCommands(ctx, input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if output == nil || output.Commands == nil {
+		return nil, errors.New("association does not exist")
+	}
+
+	return &output.Commands[0], nil
 }
 
 func checkInstancesOnline(ctx context.Context, client *ssm.Client, instanceIDs []string) *retry.RetryError {
@@ -305,21 +343,20 @@ func checkInstancesOnline(ctx context.Context, client *ssm.Client, instanceIDs [
 
 	input := &ssm.DescribeInstanceInformationInput{
 		InstanceInformationFilterList: iif,
+		MaxResults:                    aws.Int32(50),
 	}
-	resp, err := client.DescribeInstanceInformation(ctx, input)
+	output, err := client.DescribeInstanceInformation(ctx, input)
 	if err != nil {
 		return retry.NonRetryableError(err)
 	}
 
-	// Create a set of online instances
-	onlineInstances := make(map[string]bool)
-	for _, instance := range resp.InstanceInformationList {
-		onlineInstances[*instance.InstanceId] = instance.PingStatus == "Online"
+	if len(instanceIDs) != len(output.InstanceInformationList) {
+		return retry.RetryableError(fmt.Errorf("%d of %d instances are available", len(instanceIDs), len(output.InstanceInformationList)))
 	}
 
-	// Check if all given instance IDs are online
-	for _, id := range instanceIDs {
-		if !onlineInstances[id] {
+	for _, instance := range output.InstanceInformationList {
+		id := aws.ToString(instance.InstanceId)
+		if !slices.Contains(instanceIDs, id) {
 			return retry.RetryableError(fmt.Errorf("instance %s is not online yet", id))
 		}
 	}
@@ -327,11 +364,43 @@ func checkInstancesOnline(ctx context.Context, client *ssm.Client, instanceIDs [
 	return nil
 }
 
-func waitForInstancesOnline(ctx context.Context, client *ssm.Client, instanceIDs []string) error {
+func waitForInstancesOnline(ctx context.Context, conn *ssm.Client, instanceIDs []string) error {
 	timeout := 3600 * time.Second
 	err := retry.RetryContext(ctx, timeout, func() *retry.RetryError {
-		return checkInstancesOnline(ctx, client, instanceIDs)
+		return checkInstancesOnline(ctx, conn, instanceIDs)
 	})
 
 	return err
+}
+
+func waitCommandComplete(ctx context.Context, conn *ssm.Client, commandId *string, timeout time.Duration, diag diag.Diagnostics) (*awstypes.Command, error) {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{
+			string(awstypes.CommandStatusPending),
+			string(awstypes.CommandStatusInProgress),
+		},
+		Target:  []string{string(awstypes.CommandStatusSuccess)},
+		Refresh: statusCommand(ctx, conn, commandId),
+		Timeout: timeout,
+	}
+
+	outputRaw, err := stateConf.WaitForStateContext(ctx)
+
+	if output, ok := outputRaw.(*awstypes.Command); ok {
+		if output.Status == awstypes.CommandStatusFailed {
+			diag.AddError("Command error", "Command status is failed.")
+		}
+
+		return output, err
+	}
+
+	return nil, err
+}
+
+func statusCommand(ctx context.Context, conn *ssm.Client, commandId *string) retry.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		command, err := FindCommandByID(ctx, conn, commandId)
+
+		return command, string(command.Status), err
+	}
 }

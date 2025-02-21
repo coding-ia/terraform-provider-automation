@@ -184,7 +184,8 @@ resource "automation_aws_ssm_command" "test" {
     document_name = aws_ssm_document.test.name
   }
 
-  instance_ids = [aws_instance.test.id]
+  instance_ids                     = [aws_instance.test.id]
+  wait_for_success_timeout_seconds = 3600
 }
 `, rName)
 }
