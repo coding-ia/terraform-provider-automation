@@ -36,7 +36,7 @@ func SetFrameworkFromString(state *types.String, value string, emptyAsNull bool)
 	}
 }
 
-func SetFrameworkFromtStringPointer(state *types.String, value *string) {
+func SetFrameworkFromStringPointer(state *types.String, value *string) {
 	if value != nil {
 		strVal := aws.ToString(value)
 		*state = types.StringValue(strVal)
@@ -58,9 +58,9 @@ func SetFrameworkFromOutputLocationModel(state *[]OutputLocationModel, value *aw
 
 	var outputLocations []OutputLocationModel
 	outputLocation := &OutputLocationModel{}
-	SetFrameworkFromtStringPointer(&outputLocation.S3Region, value.S3Location.OutputS3Region)
-	SetFrameworkFromtStringPointer(&outputLocation.S3BucketName, value.S3Location.OutputS3BucketName)
-	SetFrameworkFromtStringPointer(&outputLocation.S3KeyPrefix, value.S3Location.OutputS3KeyPrefix)
+	SetFrameworkFromStringPointer(&outputLocation.S3Region, value.S3Location.OutputS3Region)
+	SetFrameworkFromStringPointer(&outputLocation.S3BucketName, value.S3Location.OutputS3BucketName)
+	SetFrameworkFromStringPointer(&outputLocation.S3KeyPrefix, value.S3Location.OutputS3KeyPrefix)
 	*state = append(outputLocations, *outputLocation)
 }
 

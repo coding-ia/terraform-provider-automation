@@ -356,10 +356,10 @@ func (a *AWSSSMAssociationResource) Create(ctx context.Context, request resource
 	}.String()
 
 	SetFrameworkFromString(&data.Arn, amazonResourceName, false)
-	SetFrameworkFromtStringPointer(&data.AssociationId, output.AssociationDescription.AssociationId)
-	SetFrameworkFromtStringPointer(&data.AssociationName, output.AssociationDescription.AssociationName)
-	SetFrameworkFromtStringPointer(&data.AssociationVersion, output.AssociationDescription.AssociationVersion)
-	SetFrameworkFromtStringPointer(&data.DocumentVersion, output.AssociationDescription.DocumentVersion)
+	SetFrameworkFromStringPointer(&data.AssociationId, output.AssociationDescription.AssociationId)
+	SetFrameworkFromStringPointer(&data.AssociationName, output.AssociationDescription.AssociationName)
+	SetFrameworkFromStringPointer(&data.AssociationVersion, output.AssociationDescription.AssociationVersion)
+	SetFrameworkFromStringPointer(&data.DocumentVersion, output.AssociationDescription.DocumentVersion)
 	SetFrameworkTags(&data.TagsAll, input.Tags, true)
 	data.Targets = targetsOut(ctx, output.AssociationDescription.Targets)
 
@@ -404,12 +404,12 @@ func (a *AWSSSMAssociationResource) Read(ctx context.Context, request resource.R
 	SetFrameworkFromString(&data.ComplianceSeverity, string(association.ComplianceSeverity), true)
 	SetFrameworkFromString(&data.SyncCompliance, string(association.SyncCompliance), true)
 
-	SetFrameworkFromtStringPointer(&data.AssociationName, association.AssociationName)
-	SetFrameworkFromtStringPointer(&data.AutomationTargetParameterName, association.AutomationTargetParameterName)
-	SetFrameworkFromtStringPointer(&data.MaxConcurrency, association.MaxConcurrency)
-	SetFrameworkFromtStringPointer(&data.MaxErrors, association.MaxErrors)
-	SetFrameworkFromtStringPointer(&data.Name, association.Name)
-	SetFrameworkFromtStringPointer(&data.ScheduleExpression, association.ScheduleExpression)
+	SetFrameworkFromStringPointer(&data.AssociationName, association.AssociationName)
+	SetFrameworkFromStringPointer(&data.AutomationTargetParameterName, association.AutomationTargetParameterName)
+	SetFrameworkFromStringPointer(&data.MaxConcurrency, association.MaxConcurrency)
+	SetFrameworkFromStringPointer(&data.MaxErrors, association.MaxErrors)
+	SetFrameworkFromStringPointer(&data.Name, association.Name)
+	SetFrameworkFromStringPointer(&data.ScheduleExpression, association.ScheduleExpression)
 
 	SetFrameworkFromOutputLocationModel(&data.OutputLocation, association.OutputLocation)
 
@@ -424,9 +424,9 @@ func (a *AWSSSMAssociationResource) Read(ctx context.Context, request resource.R
 
 	SetFrameworkFromBool(&data.ApplyOnlyAtCronInterval, association.ApplyOnlyAtCronInterval)
 	SetFrameworkFromString(&data.Arn, amazonResourceName, false)
-	SetFrameworkFromtStringPointer(&data.AssociationId, association.AssociationId)
-	SetFrameworkFromtStringPointer(&data.AssociationVersion, association.AssociationVersion)
-	SetFrameworkFromtStringPointer(&data.DocumentVersion, association.DocumentVersion)
+	SetFrameworkFromStringPointer(&data.AssociationId, association.AssociationId)
+	SetFrameworkFromStringPointer(&data.AssociationVersion, association.AssociationVersion)
+	SetFrameworkFromStringPointer(&data.DocumentVersion, association.DocumentVersion)
 	data.Parameters = parametersOut(association.Parameters)
 	SetFrameworkTags(&data.TagsAll, tags, true)
 	data.Targets = targetsOut(ctx, association.Targets)
@@ -533,9 +533,9 @@ func (a *AWSSSMAssociationResource) Update(ctx context.Context, request resource
 		}.String()
 
 		SetFrameworkFromString(&plan.Arn, amazonResourceName, false)
-		SetFrameworkFromtStringPointer(&plan.AssociationId, output.AssociationDescription.AssociationId)
-		SetFrameworkFromtStringPointer(&plan.AssociationVersion, output.AssociationDescription.AssociationVersion)
-		SetFrameworkFromtStringPointer(&plan.DocumentVersion, output.AssociationDescription.DocumentVersion)
+		SetFrameworkFromStringPointer(&plan.AssociationId, output.AssociationDescription.AssociationId)
+		SetFrameworkFromStringPointer(&plan.AssociationVersion, output.AssociationDescription.AssociationVersion)
+		SetFrameworkFromStringPointer(&plan.DocumentVersion, output.AssociationDescription.DocumentVersion)
 		plan.Parameters = parametersOut(output.AssociationDescription.Parameters)
 		plan.Targets = targetsOut(ctx, output.AssociationDescription.Targets)
 		plan.TagsAll = state.TagsAll
