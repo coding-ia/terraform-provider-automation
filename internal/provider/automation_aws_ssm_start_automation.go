@@ -240,6 +240,20 @@ func (a *AWSSSMStartAutomationResource) Delete(ctx context.Context, request reso
 		return
 	}
 
+	ssmClient := a.Meta.AWSClient.SSMClient
+	ae, err := FindAutomationExecutionById(ctx, ssmClient, data.AutomationId.ValueStringPointer())
+	if err != nil {
+
+	}
+
+	if ae != nil {
+		if ae.AutomationExecutionStatus == awstypes.AutomationExecutionStatusInprogress ||
+			ae.AutomationExecutionStatus == awstypes.AutomationExecutionStatusPending ||
+			ae.AutomationExecutionStatus == awstypes.AutomationExecutionStatusPendingApproval {
+			_ = StopAutomationExecution(ctx, ssmClient, ae.AutomationExecutionId)
+		}
+	}
+
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
@@ -309,7 +323,6 @@ func FindAutomationExecutionById(ctx context.Context, conn *ssm.Client, id *stri
 	}
 
 	output, err := conn.GetAutomationExecution(ctx, input)
-
 	if err != nil {
 		if errs.IsA[*awstypes.AutomationExecutionNotFoundException](err) {
 			return nil, nil
@@ -319,4 +332,17 @@ func FindAutomationExecutionById(ctx context.Context, conn *ssm.Client, id *stri
 	}
 
 	return output.AutomationExecution, nil
+}
+
+func StopAutomationExecution(ctx context.Context, conn *ssm.Client, id *string) error {
+	input := &ssm.StopAutomationExecutionInput{
+		AutomationExecutionId: id,
+	}
+
+	_, err := conn.StopAutomationExecution(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

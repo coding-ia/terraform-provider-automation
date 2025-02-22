@@ -81,6 +81,36 @@ func TestAccSSMStartAutomation_updateDefault(t *testing.T) {
 	})
 }
 
+func TestAccSSMStartAutomation_stopOnDelete(t *testing.T) {
+	ctx := context.Background()
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "automation_aws_ssm_start_automation.test"
+
+	resource.Test(t, resource.TestCase{
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"aws": {
+				Source:            "hashicorp/aws",
+				VersionConstraint: "5.87.0",
+			},
+		},
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccStartAutomationConfig_basicLongRunning(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckStartAutomationExists(ctx, resourceName),
+				),
+			},
+			{
+				Config:  testAccStartAutomationConfig_basicLongRunning(rName),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func testAccStartAutomationConfig_basicParameters(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
@@ -220,6 +250,36 @@ resource "aws_ssm_document" "test" {
 resource "automation_aws_ssm_start_automation" "test" {
   document_name    = aws_ssm_document.test.name
   document_version = "1"
+}
+`, rName)
+}
+
+func testAccStartAutomationConfig_basicLongRunning(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_ssm_document" "test" {
+  name          = "%[1]s"
+  document_type = "Automation"
+
+  content = <<-DOC
+{
+  "schemaVersion": "0.3",
+  "mainSteps": [
+    {
+      "name": "Sleep",
+      "action": "aws:sleep",
+      "isEnd": true,
+      "inputs": {
+        "Duration": "PT5M"
+      }
+    }
+  ]
+}
+  DOC
+
+}
+
+resource "automation_aws_ssm_start_automation" "test" {
+  document_name = aws_ssm_document.test.name
 }
 `, rName)
 }
