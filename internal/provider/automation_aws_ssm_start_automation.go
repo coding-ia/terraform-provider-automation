@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -70,6 +71,9 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 			"client_token": schema.StringAttribute{
 				Description: "Generated idempotency token.",
 				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"document_name": schema.StringAttribute{
 				Description: "The name of the SSM automation document.",
@@ -95,12 +99,18 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([1-9][0-9]*|[1-9][0-9]%|[1-9]%|100%)$`), "must be a valid number (e.g. 10) or percentage including the percent sign (e.g. 10%)"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"max_errors": schema.StringAttribute{
 				Description: "The number of errors that are allowed before the system stops sending requests to run the association on additional targets.  You can specify either an absolute number of errors, for example 10, or a percentage of the target set, for example 10%.",
 				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexache.MustCompile(`^([1-9][0-9]*|[0]|[1-9][0-9]%|[0-9]%|100%)$`), "must be a valid number (e.g. 10) or percentage including the percent sign (e.g. 10%)"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"mode": schema.StringAttribute{
@@ -114,6 +124,9 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 						}...,
 					),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"parameters": schema.MapAttribute{
 				Description: "The parameters for the runtime configuration of the document.",
@@ -126,11 +139,17 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 			"tags": schema.MapAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.RequiresReplace(),
+				},
 			},
 			"target_parameter_name": schema.StringAttribute{
 				Optional: true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 50),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"targets": schema.ListAttribute{
@@ -144,6 +163,9 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 				},
 				Validators: []validator.List{
 					listvalidator.SizeAtMost(5),
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
 			},
 			"wait_for_success_timeout_seconds": schema.Int32Attribute{
