@@ -272,11 +272,15 @@ func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSS
 		input.Parameters = parametersIn(ctx, data.Parameters.Elements())
 	}
 
+	if !data.Tags.IsNull() && !data.Parameters.IsUnknown() {
+		input.Tags = tagsIn(data.Tags.Elements())
+	}
+
 	if !data.TargetParameterName.IsNull() {
 		input.TargetParameterName = data.TargetParameterName.ValueStringPointer()
 	}
 
-	if !data.Targets.IsUnknown() && !data.Targets.IsNull() {
+	if !data.Targets.IsNull() && !data.Targets.IsUnknown() {
 		input.Targets = targetsIn(data.Targets)
 	}
 
