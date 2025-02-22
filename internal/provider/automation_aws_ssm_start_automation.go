@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
@@ -165,9 +164,9 @@ func (a *AWSSSMStartAutomationResource) Create(ctx context.Context, request reso
 	}
 
 	ssmClient := a.Meta.AWSClient.SSMClient
-	d := StartAutomationExecution(ctx, ssmClient, &data)
-	if d != nil {
-		response.Diagnostics.Append(*d...)
+	err := StartAutomationExecution(ctx, ssmClient, &data)
+	if err != nil {
+		response.Diagnostics.AddError("Error starting automation execution", err.Error())
 		return
 	}
 
@@ -222,9 +221,7 @@ func (a *AWSSSMStartAutomationResource) Delete(ctx context.Context, request reso
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
-func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSSMStartAutomationResourceModel) *diag.Diagnostics {
-	var diagnostics *diag.Diagnostics
-
+func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSSMStartAutomationResourceModel) error {
 	input := &ssm.StartAutomationExecutionInput{
 		DocumentName: data.DocumentName.ValueStringPointer(),
 	}
@@ -263,14 +260,12 @@ func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSS
 
 	output, err := conn.StartAutomationExecution(ctx, input)
 	if err != nil {
-		diagnostics.AddError("Error starting SSM execution", err.Error())
-		return diagnostics
+		return err
 	}
 
 	ae, err := FindAutomationExecutionById(ctx, conn, output.AutomationExecutionId)
 	if err != nil {
-		diagnostics.AddError("Error finding SSM Automation Execution ID", err.Error())
-		return diagnostics
+		return err
 	}
 
 	data.AutomationId = types.StringPointerValue(output.AutomationExecutionId)
