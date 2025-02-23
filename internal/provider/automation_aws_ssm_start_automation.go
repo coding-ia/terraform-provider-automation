@@ -204,17 +204,6 @@ func (a *AWSSSMStartAutomationResource) Read(ctx context.Context, request resour
 		return
 	}
 
-	ssmClient := a.Meta.AWSClient.SSMClient
-	ae, err := FindAutomationExecutionById(ctx, ssmClient, data.AutomationId.ValueStringPointer())
-	if err != nil {
-		response.Diagnostics.AddError("Error finding SSM Automation Execution ID", err.Error())
-		return
-	}
-
-	if ae != nil {
-		data.DocumentVersion = types.StringPointerValue(ae.DocumentVersion)
-	}
-
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
