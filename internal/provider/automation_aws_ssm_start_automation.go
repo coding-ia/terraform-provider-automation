@@ -157,7 +157,7 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 				},
 			},
 			"targets": schema.ListAttribute{
-				Description: "The targets for the association.  You can target managed nodes by using tags, AWS resource groups, all managed nodes in an AWS account, or individual managed node IDs.",
+				Description: "The targets for the SSM automation execution.  You can target managed nodes by using tags, AWS resource groups, all managed nodes in an AWS account, or individual managed node IDs.",
 				Optional:    true,
 				ElementType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
@@ -200,7 +200,7 @@ func (a *AWSSSMStartAutomationResource) Create(ctx context.Context, request reso
 		!data.WaitForSuccessTimeoutSeconds.IsUnknown() {
 		timeout := time.Duration(data.WaitForSuccessTimeoutSeconds.ValueInt32()) * time.Second
 		if _, err := waitStartAutomation(ctx, ssmClient, data.AutomationId.ValueStringPointer(), timeout, response.Diagnostics); err != nil {
-			response.Diagnostics.AddError("Error creating SSM association", fmt.Sprintf("waiting for SSM Association (%s) create: %s", data.AutomationId.String(), err.Error()))
+			response.Diagnostics.AddError("Error executing SSM automation", fmt.Sprintf("waiting for SSM execution (%s): %s", data.AutomationId.String(), err.Error()))
 			return
 		}
 	}
@@ -310,10 +310,10 @@ func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSS
 		return err
 	}
 
-	data.AutomationId = types.StringPointerValue(output.AutomationExecutionId)
+	SetFrameworkFromStringPointer(&data.AutomationId, output.AutomationExecutionId)
 
 	if ae != nil {
-		data.DocumentVersion = types.StringPointerValue(ae.DocumentVersion)
+		SetFrameworkFromStringPointer(&data.DocumentVersion, ae.DocumentVersion)
 	}
 
 	return nil
