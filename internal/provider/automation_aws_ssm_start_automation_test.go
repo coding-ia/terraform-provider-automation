@@ -118,7 +118,7 @@ func TestAccSSMStartAutomation_stopOnDelete(t *testing.T) {
 	})
 }
 
-func TestAccSSMStartAutomation_WaitOnSucessTimeout(t *testing.T) {
+func TestAccSSMStartAutomation_WaitForSuccessTimeout(t *testing.T) {
 	ctx := context.Background()
 	rName := acctest.RandomWithPrefix("tf-acc-test")
 	resourceName := "automation_aws_ssm_start_automation.test"
@@ -135,7 +135,7 @@ func TestAccSSMStartAutomation_WaitOnSucessTimeout(t *testing.T) {
 		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccStartAutomationConfig_basicLongRunningWithWait(rName),
+				Config: testAccStartAutomationConfig_basicLongRunningWithWaitForSuccess(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckStartAutomationExists(ctx, resourceName),
 				),
@@ -317,7 +317,7 @@ resource "automation_aws_ssm_start_automation" "test" {
 `, rName)
 }
 
-func testAccStartAutomationConfig_basicLongRunningWithWait(rName string) string {
+func testAccStartAutomationConfig_basicLongRunningWithWaitForSuccess(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s"
@@ -332,7 +332,7 @@ resource "aws_ssm_document" "test" {
       "action": "aws:sleep",
       "isEnd": true,
       "inputs": {
-        "Duration": "PT5M"
+        "Duration": "PT1M"
       }
     }
   ]
@@ -343,7 +343,7 @@ resource "aws_ssm_document" "test" {
 
 resource "automation_aws_ssm_start_automation" "test" {
   document_name                    = aws_ssm_document.test.name
-  wait_for_success_timeout_seconds = 600
+  wait_for_success_timeout_seconds = 90
 }
 `, rName)
 }

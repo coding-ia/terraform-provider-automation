@@ -356,8 +356,7 @@ func waitStartAutomation(ctx context.Context, conn *ssm.Client, id *string, time
 			string(awstypes.AutomationExecutionStatusInprogress),
 		},
 		Target: []string{
-			string(awstypes.AutomationExecutionStatusCompletedWithSuccess),
-			string(awstypes.AutomationExecutionStatusCompletedWithFailure),
+			string(awstypes.AutomationExecutionStatusSuccess),
 		},
 		Refresh: statusExecution(ctx, conn, id),
 		Timeout: timeout,
