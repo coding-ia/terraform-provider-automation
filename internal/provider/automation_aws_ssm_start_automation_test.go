@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awstypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -104,8 +105,40 @@ func TestAccSSMStartAutomation_stopOnDelete(t *testing.T) {
 				),
 			},
 			{
+				RefreshState: true,
+			},
+			{
 				Config:  testAccStartAutomationConfig_basicLongRunning(rName),
 				Destroy: true,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckStartAutomationStatus(ctx, resourceName, string(awstypes.AutomationExecutionStatusCancelled)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccSSMStartAutomation_WaitOnSucessTimeout(t *testing.T) {
+	ctx := context.Background()
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "automation_aws_ssm_start_automation.test"
+
+	resource.Test(t, resource.TestCase{
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"aws": {
+				Source:            "hashicorp/aws",
+				VersionConstraint: "5.87.0",
+			},
+		},
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccStartAutomationConfig_basicLongRunningWithWait(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckStartAutomationExists(ctx, resourceName),
+				),
 			},
 		},
 	})
@@ -284,6 +317,37 @@ resource "automation_aws_ssm_start_automation" "test" {
 `, rName)
 }
 
+func testAccStartAutomationConfig_basicLongRunningWithWait(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_ssm_document" "test" {
+  name          = "%[1]s"
+  document_type = "Automation"
+
+  content = <<-DOC
+{
+  "schemaVersion": "0.3",
+  "mainSteps": [
+    {
+      "name": "Sleep",
+      "action": "aws:sleep",
+      "isEnd": true,
+      "inputs": {
+        "Duration": "PT5M"
+      }
+    }
+  ]
+}
+  DOC
+
+}
+
+resource "automation_aws_ssm_start_automation" "test" {
+  document_name                    = aws_ssm_document.test.name
+  wait_for_success_timeout_seconds = 600
+}
+`, rName)
+}
+
 func testAccCheckStartAutomationExists(ctx context.Context, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -297,5 +361,29 @@ func testAccCheckStartAutomationExists(ctx context.Context, n string) resource.T
 		_, err := FindAutomationExecutionById(ctx, conn, aws.String(automationId))
 
 		return err
+	}
+}
+
+func testAccCheckStartAutomationStatus(ctx context.Context, n string, status string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("not found: %s", n)
+		}
+
+		conn := getProviderMeta(ctx).AWSClient.SSMClient
+
+		automationId := rs.Primary.Attributes["automation_id"]
+		ae, err := FindAutomationExecutionById(ctx, conn, aws.String(automationId))
+
+		if err != nil {
+			return err
+		}
+
+		if string(ae.AutomationExecutionStatus) != status {
+			return fmt.Errorf("automation status does not match %s", status)
+		}
+
+		return nil
 	}
 }

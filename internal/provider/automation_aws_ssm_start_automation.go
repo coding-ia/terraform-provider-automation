@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"github.com/YakDriver/regexache"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	awstypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
@@ -9,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
@@ -17,6 +19,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"time"
 )
 
 var _ resource.Resource = &AWSSSMStartAutomationResource{}
@@ -192,6 +196,15 @@ func (a *AWSSSMStartAutomationResource) Create(ctx context.Context, request reso
 		return
 	}
 
+	if !data.WaitForSuccessTimeoutSeconds.IsNull() &&
+		!data.WaitForSuccessTimeoutSeconds.IsUnknown() {
+		timeout := time.Duration(data.WaitForSuccessTimeoutSeconds.ValueInt32()) * time.Second
+		if _, err := waitStartAutomation(ctx, ssmClient, data.AutomationId.ValueStringPointer(), timeout, response.Diagnostics); err != nil {
+			response.Diagnostics.AddError("Error creating SSM association", fmt.Sprintf("waiting for SSM Association (%s) create: %s", data.AutomationId.String(), err.Error()))
+			return
+		}
+	}
+
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
@@ -334,4 +347,45 @@ func StopAutomationExecution(ctx context.Context, conn *ssm.Client, id *string) 
 	}
 
 	return nil
+}
+
+func waitStartAutomation(ctx context.Context, conn *ssm.Client, id *string, timeout time.Duration, diag diag.Diagnostics) (*awstypes.AutomationExecution, error) {
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{
+			string(awstypes.AutomationExecutionStatusPending),
+			string(awstypes.AutomationExecutionStatusInprogress),
+		},
+		Target: []string{
+			string(awstypes.AutomationExecutionStatusCompletedWithSuccess),
+			string(awstypes.AutomationExecutionStatusCompletedWithFailure),
+		},
+		Refresh: statusExecution(ctx, conn, id),
+		Timeout: timeout,
+	}
+
+	outputRaw, err := stateConf.WaitForStateContext(ctx)
+
+	if output, ok := outputRaw.(*awstypes.AutomationExecution); ok {
+		if status := string(output.AutomationExecutionStatus); status == string(awstypes.AutomationExecutionStatusFailed) {
+			diag.AddError("Association error", string(output.AutomationExecutionStatus))
+		}
+
+		return output, err
+	}
+
+	return nil, err
+}
+
+func statusExecution(ctx context.Context, conn *ssm.Client, id *string) retry.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		output, err := FindAutomationExecutionById(ctx, conn, id)
+
+		if err != nil {
+			return nil, "", err
+		}
+
+		// Use the Overview.Status field instead of the root-level Status as DescribeAssociation
+		// does not appear to return the root-level Status in the API response at this time.
+		return output, string(output.AutomationExecutionStatus), nil
+	}
 }
