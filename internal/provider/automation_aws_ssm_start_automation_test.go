@@ -144,6 +144,32 @@ func TestAccSSMStartAutomation_WaitForSuccessTimeout(t *testing.T) {
 	})
 }
 
+func TestAccSSMStartAutomation_Basic(t *testing.T) {
+	ctx := context.Background()
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "automation_aws_ssm_start_automation.test"
+
+	resource.Test(t, resource.TestCase{
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"aws": {
+				Source:            "hashicorp/aws",
+				VersionConstraint: "5.87.0",
+			},
+		},
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccStartAutomationConfig_basic(rName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckStartAutomationExists(ctx, resourceName),
+				),
+			},
+		},
+	})
+}
+
 func testAccStartAutomationConfig_basicParameters(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
@@ -344,6 +370,161 @@ resource "aws_ssm_document" "test" {
 resource "automation_aws_ssm_start_automation" "test" {
   document_name                    = aws_ssm_document.test.name
   wait_for_success_timeout_seconds = 90
+}
+`, rName)
+}
+
+func testAccStartAutomationConfig_basic(rName string) string {
+	return fmt.Sprintf(`
+data "aws_availability_zones" "available" {
+  state = "available"
+
+  filter {
+    name   = "opt-in-status"
+    values = ["opt-in-not-required"]
+  }
+}
+
+data "aws_ami" "amzn" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnet" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+  filter {
+    name   = "availabilityZone"
+    values = [data.aws_availability_zones.available.names[0]]  # Replace with your desired availability zone
+  }
+}
+
+resource "aws_security_group" "test" {
+  name        = %[1]q
+  description = "foo"
+  vpc_id      = data.aws_vpc.default.id
+
+  egress = [
+    {
+      cidr_blocks = [
+        "0.0.0.0/0",
+      ]
+      description = ""
+      from_port   = 0
+      ipv6_cidr_blocks = [
+        "::/0",
+      ]
+      prefix_list_ids = []
+      protocol        = "-1"
+      security_groups = []
+      self            = false
+      to_port         = 0
+    },
+  ]
+  ingress {
+    protocol    = "icmp"
+    from_port   = -1
+    to_port     = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_iam_role" "test" {
+  name = %[1]q
+  
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+resource "aws_iam_role_policy_attachment" "test" {
+  role       = aws_iam_role.test.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+}
+resource "aws_iam_instance_profile" "test" {
+  name = %[1]q
+  role = aws_iam_role.test.name
+}
+
+resource "aws_instance" "test" {
+  ami                    = data.aws_ami.amzn.image_id
+  availability_zone      = data.aws_availability_zones.available.names[0]
+  iam_instance_profile   = aws_iam_instance_profile.test.name
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.test.id]
+  subnet_id              = data.aws_subnet.default.id
+
+  tags = {
+    Name = %[1]q
+  }
+}
+
+resource "aws_ssm_document" "test" {
+  name          = "%[1]s"
+  document_type = "Automation"
+
+  content = <<-DOC
+{
+  "schemaVersion": "0.3",
+  "description": "Unit test automation.",
+  "assumeRole": "{{AutomationAssumeRole}}",
+  "parameters": {
+    "AutomationAssumeRole": {
+      "type": "String",
+      "default": ""
+    },
+    "InstanceId": {
+      "type": "String"
+    }
+  },
+  "mainSteps": [
+    {
+      "name": "RunCommandOnInstances",
+      "action": "aws:runCommand",
+      "isEnd": true,
+      "inputs": {
+        "DocumentName": "AWS-RunShellScript",
+        "Parameters": {
+          "commands": [
+            "ifconfig"
+          ]
+        },
+        "InstanceIds": [
+          "{{ InstanceId }}"
+        ]
+      }
+    }
+  ]
+}
+  DOC
+
+}
+
+resource "automation_aws_ssm_start_automation" "test" {
+  document_name = aws_ssm_document.test.name
+
+  parameters = {
+    InstanceId           = [ aws_instance.test.id ]
+  }
 }
 `, rName)
 }
