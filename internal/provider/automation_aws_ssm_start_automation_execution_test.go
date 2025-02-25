@@ -11,10 +11,10 @@ import (
 	"testing"
 )
 
-func TestAccSSMStartAutomation_withParameters(t *testing.T) {
+func TestAccSSMStartAutomationExecution_withParameters(t *testing.T) {
 	ctx := context.Background()
 	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "automation_aws_ssm_start_automation.test"
+	resourceName := "automation_aws_ssm_start_automation_execution.test"
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -28,16 +28,16 @@ func TestAccSSMStartAutomation_withParameters(t *testing.T) {
 		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccStartAutomationConfig_basicParameters(rName),
+				Config: testAccStartAutomationExecutionConfig_basicParameters(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "parameters.Directory.0", "myWorkSpace"),
 				),
 			},
 			{
-				Config: testAccStartAutomationConfig_basicParametersUpdated(rName),
+				Config: testAccStartAutomationExecutionConfig_basicParametersUpdated(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "parameters.Directory.0", "myWorkSpaceUpdated"),
 				),
 			},
@@ -45,10 +45,10 @@ func TestAccSSMStartAutomation_withParameters(t *testing.T) {
 	})
 }
 
-func TestAccSSMStartAutomation_updateDefault(t *testing.T) {
+func TestAccSSMStartAutomationExecution_updateDefault(t *testing.T) {
 	ctx := context.Background()
 	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "automation_aws_ssm_start_automation.test"
+	resourceName := "automation_aws_ssm_start_automation_execution.test"
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -62,9 +62,9 @@ func TestAccSSMStartAutomation_updateDefault(t *testing.T) {
 		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccStartAutomationConfig_basicDefault(rName),
+				Config: testAccStartAutomationExecutionConfig_basicDefault(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "document_version", "1"),
 				),
 			},
@@ -72,9 +72,9 @@ func TestAccSSMStartAutomation_updateDefault(t *testing.T) {
 				RefreshState: true,
 			},
 			{
-				Config: testAccStartAutomationConfig_basicDefaultUpdated(rName),
+				Config: testAccStartAutomationExecutionConfig_basicDefaultUpdated(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "document_version", "1"),
 				),
 			},
@@ -82,10 +82,10 @@ func TestAccSSMStartAutomation_updateDefault(t *testing.T) {
 	})
 }
 
-func TestAccSSMStartAutomation_stopOnDelete(t *testing.T) {
+func TestAccSSMStartAutomationExecution_stopOnDelete(t *testing.T) {
 	ctx := context.Background()
 	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "automation_aws_ssm_start_automation.test"
+	resourceName := "automation_aws_ssm_start_automation_execution.test"
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -99,29 +99,29 @@ func TestAccSSMStartAutomation_stopOnDelete(t *testing.T) {
 		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccStartAutomationConfig_basicLongRunning(rName),
+				Config: testAccStartAutomationExecutionConfig_basicLongRunning(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 				),
 			},
 			{
 				RefreshState: true,
 			},
 			{
-				Config:  testAccStartAutomationConfig_basicLongRunning(rName),
+				Config:  testAccStartAutomationExecutionConfig_basicLongRunning(rName),
 				Destroy: true,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationStatus(ctx, resourceName, string(awstypes.AutomationExecutionStatusCancelled)),
+					testAccCheckStartAutomationExecutionStatus(ctx, resourceName, string(awstypes.AutomationExecutionStatusCancelled)),
 				),
 			},
 		},
 	})
 }
 
-func TestAccSSMStartAutomation_WaitForSuccessTimeout(t *testing.T) {
+func TestAccSSMStartAutomationExecution_WaitForSuccessTimeout(t *testing.T) {
 	ctx := context.Background()
 	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "automation_aws_ssm_start_automation.test"
+	resourceName := "automation_aws_ssm_start_automation_execution.test"
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -135,19 +135,19 @@ func TestAccSSMStartAutomation_WaitForSuccessTimeout(t *testing.T) {
 		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccStartAutomationConfig_basicLongRunningWithWaitForSuccess(rName),
+				Config: testAccStartAutomationExecutionConfig_basicLongRunningWithWaitForSuccess(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 				),
 			},
 		},
 	})
 }
 
-func TestAccSSMStartAutomation_Basic(t *testing.T) {
+func TestAccSSMStartAutomationExecution_Basic(t *testing.T) {
 	ctx := context.Background()
 	rName := acctest.RandomWithPrefix("tf-acc-test")
-	resourceName := "automation_aws_ssm_start_automation.test"
+	resourceName := "automation_aws_ssm_start_automation_execution.test"
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -161,16 +161,16 @@ func TestAccSSMStartAutomation_Basic(t *testing.T) {
 		CheckDestroy:             testAccCheckAssociationDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccStartAutomationConfig_basic(rName),
+				Config: testAccStartAutomationExecutionConfig_basic(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckStartAutomationExists(ctx, resourceName),
+					testAccCheckStartAutomationExecutionExists(ctx, resourceName),
 				),
 			},
 		},
 	})
 }
 
-func testAccStartAutomationConfig_basicParameters(rName string) string {
+func testAccStartAutomationExecutionConfig_basicParameters(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s-2"
@@ -201,7 +201,7 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name = aws_ssm_document.test.name
 
   parameters = {
@@ -211,7 +211,7 @@ resource "automation_aws_ssm_start_automation" "test" {
 `, rName)
 }
 
-func testAccStartAutomationConfig_basicParametersUpdated(rName string) string {
+func testAccStartAutomationExecutionConfig_basicParametersUpdated(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s-2"
@@ -242,7 +242,7 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name = aws_ssm_document.test.name
 
   parameters = {
@@ -252,7 +252,7 @@ resource "automation_aws_ssm_start_automation" "test" {
 `, rName)
 }
 
-func testAccStartAutomationConfig_basicDefault(rName string) string {
+func testAccStartAutomationExecutionConfig_basicDefault(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s"
@@ -276,13 +276,13 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name = aws_ssm_document.test.name
 }
 `, rName)
 }
 
-func testAccStartAutomationConfig_basicDefaultUpdated(rName string) string {
+func testAccStartAutomationExecutionConfig_basicDefaultUpdated(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s"
@@ -306,14 +306,14 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name    = aws_ssm_document.test.name
   document_version = "1"
 }
 `, rName)
 }
 
-func testAccStartAutomationConfig_basicLongRunning(rName string) string {
+func testAccStartAutomationExecutionConfig_basicLongRunning(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s"
@@ -337,13 +337,13 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name = aws_ssm_document.test.name
 }
 `, rName)
 }
 
-func testAccStartAutomationConfig_basicLongRunningWithWaitForSuccess(rName string) string {
+func testAccStartAutomationExecutionConfig_basicLongRunningWithWaitForSuccess(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ssm_document" "test" {
   name          = "%[1]s"
@@ -367,14 +367,14 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name                    = aws_ssm_document.test.name
   wait_for_success_timeout_seconds = 90
 }
 `, rName)
 }
 
-func testAccStartAutomationConfig_basic(rName string) string {
+func testAccStartAutomationExecutionConfig_basic(rName string) string {
 	return fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   state = "available"
@@ -519,7 +519,7 @@ resource "aws_ssm_document" "test" {
 
 }
 
-resource "automation_aws_ssm_start_automation" "test" {
+resource "automation_aws_ssm_start_automation_execution" "test" {
   document_name = aws_ssm_document.test.name
 
   parameters = {
@@ -529,7 +529,7 @@ resource "automation_aws_ssm_start_automation" "test" {
 `, rName)
 }
 
-func testAccCheckStartAutomationExists(ctx context.Context, n string) resource.TestCheckFunc {
+func testAccCheckStartAutomationExecutionExists(ctx context.Context, n string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -545,7 +545,7 @@ func testAccCheckStartAutomationExists(ctx context.Context, n string) resource.T
 	}
 }
 
-func testAccCheckStartAutomationStatus(ctx context.Context, n string, status string) resource.TestCheckFunc {
+func testAccCheckStartAutomationExecutionStatus(ctx context.Context, n string, status string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {

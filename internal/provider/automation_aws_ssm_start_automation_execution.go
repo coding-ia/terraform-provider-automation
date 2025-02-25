@@ -23,14 +23,14 @@ import (
 	"time"
 )
 
-var _ resource.Resource = &AWSSSMStartAutomationResource{}
-var _ resource.ResourceWithConfigure = &AWSSSMStartAutomationResource{}
+var _ resource.Resource = &AWSSSMStartAutomationExecutionResource{}
+var _ resource.ResourceWithConfigure = &AWSSSMStartAutomationExecutionResource{}
 
-type AWSSSMStartAutomationResource struct {
+type AWSSSMStartAutomationExecutionResource struct {
 	Meta Meta
 }
 
-type AWSSSMStartAutomationResourceModel struct {
+type AWSSSMStartAutomationExecutionResourceModel struct {
 	AutomationId                 types.String `tfsdk:"automation_id"`
 	ClientToken                  types.String `tfsdk:"client_token"`
 	DocumentName                 types.String `tfsdk:"document_name"`
@@ -45,11 +45,11 @@ type AWSSSMStartAutomationResourceModel struct {
 	WaitForSuccessTimeoutSeconds types.Int32  `tfsdk:"wait_for_success_timeout_seconds"`
 }
 
-func newAWSSSMStartAutomationResource() resource.Resource {
-	return &AWSSSMStartAutomationResource{}
+func newAWSSSMStartAutomationExecutionResource() resource.Resource {
+	return &AWSSSMStartAutomationExecutionResource{}
 }
 
-func (a *AWSSSMStartAutomationResource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
+func (a *AWSSSMStartAutomationExecutionResource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -57,11 +57,11 @@ func (a *AWSSSMStartAutomationResource) Configure(ctx context.Context, request r
 	a.Meta = request.ProviderData.(Meta)
 }
 
-func (a *AWSSSMStartAutomationResource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_aws_ssm_start_automation"
+func (a *AWSSSMStartAutomationExecutionResource) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_aws_ssm_start_automation_execution"
 }
 
-func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
+func (a *AWSSSMStartAutomationExecutionResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: "Start automation of an SSM Document to an instance or EC2 tag.",
 		Attributes: map[string]schema.Attribute{
@@ -180,8 +180,8 @@ func (a *AWSSSMStartAutomationResource) Schema(ctx context.Context, request reso
 
 }
 
-func (a *AWSSSMStartAutomationResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
-	var data AWSSSMStartAutomationResourceModel
+func (a *AWSSSMStartAutomationExecutionResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var data AWSSSMStartAutomationExecutionResourceModel
 
 	response.Diagnostics.Append(request.Plan.Get(ctx, &data)...)
 
@@ -208,8 +208,8 @@ func (a *AWSSSMStartAutomationResource) Create(ctx context.Context, request reso
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
-func (a *AWSSSMStartAutomationResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
-	var data AWSSSMStartAutomationResourceModel
+func (a *AWSSSMStartAutomationExecutionResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	var data AWSSSMStartAutomationExecutionResourceModel
 
 	response.Diagnostics.Append(request.State.Get(ctx, &data)...)
 
@@ -220,8 +220,8 @@ func (a *AWSSSMStartAutomationResource) Read(ctx context.Context, request resour
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
-func (a *AWSSSMStartAutomationResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	var plan, state AWSSSMStartAutomationResourceModel
+func (a *AWSSSMStartAutomationExecutionResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var plan, state AWSSSMStartAutomationExecutionResourceModel
 
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
@@ -233,8 +233,8 @@ func (a *AWSSSMStartAutomationResource) Update(ctx context.Context, request reso
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 }
 
-func (a *AWSSSMStartAutomationResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	var data AWSSSMStartAutomationResourceModel
+func (a *AWSSSMStartAutomationExecutionResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+	var data AWSSSMStartAutomationExecutionResourceModel
 
 	response.Diagnostics.Append(request.State.Get(ctx, &data)...)
 
@@ -259,7 +259,7 @@ func (a *AWSSSMStartAutomationResource) Delete(ctx context.Context, request reso
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
-func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSSMStartAutomationResourceModel) error {
+func StartAutomationExecution(ctx context.Context, conn *ssm.Client, data *AWSSSMStartAutomationExecutionResourceModel) error {
 	input := &ssm.StartAutomationExecutionInput{
 		DocumentName: data.DocumentName.ValueStringPointer(),
 	}

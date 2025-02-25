@@ -71,7 +71,7 @@ func (ap *AutomationProvider) DataSources(ctx context.Context) []func() datasour
 func (ap *AutomationProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		newAWSSSMAssociationResource,
-		newAWSSSMStartAutomationResource,
+		newAWSSSMStartAutomationExecutionResource,
 	}
 }
 
